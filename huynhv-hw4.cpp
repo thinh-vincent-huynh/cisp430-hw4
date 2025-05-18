@@ -1,3 +1,4 @@
+#include <fstream>
 #include <iostream>
 using namespace std;
 
@@ -27,7 +28,7 @@ struct aqueue{
 };
 
 //enqueue at the end of queue
-void enqueue(aqueue*& queue, atree* tree){
+void enqueue(aqueue* queue, atree* tree){
     if (!queue){            //empty queue
         queue = new aqueue(tree, nullptr);
     }else{
@@ -40,12 +41,23 @@ void enqueue(aqueue*& queue, atree* tree){
 }
 
 //move front to the next one in queue & delete current front
-atree* dequeue(aqueue*& queue){
+atree* dequeue(aqueue* queue){
     aqueue* curr = queue;
     atree* tree = queue->n;
     queue = queue->next;
     delete curr;
     return tree;
+}
+
+void siftUp(atree* nn){
+    if (nn->parent->value < nn->value){
+        int temp = nn->parent->value;
+        nn->parent->value = nn->value;
+        nn->value = temp;
+    }
+    if (nn->parent){
+        siftUp(nn->parent);
+    }
 }
 
 //insert new node into heap in the complete way
@@ -60,13 +72,15 @@ void insertIntoHeap(atree* root, int value){
     while (true){
         atree* curr = dequeue(queue);
         if (!curr->left){
-            nn = curr->left = new atree(value, nullptr, nullptr, curr);
+            nn = curr->left = new atree(value, nullptr,
+                nullptr, curr);
             break;
         }else{
             enqueue(queue, curr->left);
         }
         if (!curr->right){
-            nn = curr->right = new atree(value, nullptr, nullptr, curr);
+            nn = curr->right = new atree(value, nullptr,
+                nullptr, curr);
             break;
         }else{
             enqueue(queue, curr->right);
@@ -75,7 +89,43 @@ void insertIntoHeap(atree* root, int value){
     siftUp(nn);
 }
 
-// sift down
-// delete
+void siftDown(atree* parent){
+    atree* child = nullptr;
+    if (!parent->left){
+        child = parent->right;
+    }else if (!parent->right){
+        child = parent->left;
+    }else{
+        child = (parent->left->value > parent->right->value)
+               ? parent->left : parent->right;
+    }
+
+    if (parent->value < child->value){
+        int temp = parent->value;
+        parent->value = child->value;
+        child->value = temp;
+    }
+    if (child->left || child->right){
+        siftDown(child);
+    }
+}
+
+void deleteFromHeap(atree* root){
+    aqueue* queue = nullptr;
+    atree*  last  = nullptr;
+    enqueue(queue, root);
+    while (queue){
+        last = dequeue(queue);
+        if (last->left){
+            enqueue(queue, last->left);
+        }
+        if (last->right){
+            enqueue(queue, last->right);
+        }
+    }
+    root->value = last->value;
+    delete last;
+    siftDown(root);
+}
 
 // display
