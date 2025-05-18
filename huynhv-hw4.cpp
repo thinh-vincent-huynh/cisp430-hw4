@@ -30,7 +30,7 @@ struct aqueue{
 };
 
 //enqueue at the end of queue
-void enqueue(aqueue* queue, atree* tree){
+void enqueue(aqueue*& queue, atree* tree){
     if (!queue){            //empty queue
         queue = new aqueue(tree, nullptr);
     }else{                  //non-empty queue
@@ -43,7 +43,7 @@ void enqueue(aqueue* queue, atree* tree){
 }
 
 //move front to the next one in queue & delete current front
-atree* dequeue(aqueue* queue){
+atree* dequeue(aqueue*& queue){
     aqueue* curr = queue;
     atree* tree = queue->n;
     queue = queue->next;
@@ -53,18 +53,16 @@ atree* dequeue(aqueue* queue){
 
 //recursively sift up to fulfill MAX heap requirement
 void siftUp(atree* nn){
-    if (nn->parent->value < nn->value){ //need to swap?
+    if (nn->parent && nn->parent->value < nn->value){ //need to swap?
         int temp = nn->parent->value;
         nn->parent->value = nn->value;
         nn->value = temp;
-    }
-    if (nn->parent){        //not yet at root?
         siftUp(nn->parent); //recursive
     }
 }
 
 //insert new node into heap in the complete way
-void insertIntoHeap(atree* root, int value){
+void insertIntoHeap(atree*& root, int value){
     if (!root){ //empty heap
         root = new atree(value, nullptr, nullptr, nullptr);
         return;
@@ -93,7 +91,7 @@ void insertIntoHeap(atree* root, int value){
         }
     }
     while (queue){  //clean queue when done using
-        atree* curr = dequeue(queue);
+        dequeue(queue);
     }
     siftUp(nn);     //fulfill MAX requirement
 }
@@ -137,6 +135,13 @@ void deleteFromHeap(atree* root){
         }
     }
     root->value = last->value;  //replace root with last node
+    if (last->parent) {         //nullify children pointers
+        if (last->parent->left == last) {   //last was left
+            last->parent->left = nullptr;
+        } else {                            //last was right
+            last->parent->right = nullptr;
+        }
+    }
     delete last;                //cut & paste last node
     siftDown(root);             //fulfill MAX requirement
 }
@@ -146,7 +151,7 @@ int depth(atree* root){
     //initializations
     int nodes = 0;              //amount of nodes in heap
     aqueue* queue = nullptr;
-    int depth = 0, two = 2;     //ceil( log2(nodes) )
+    int depth = 1, two = 2;     //ceil( log2(nodes) )
 
     enqueue(queue, root);
     while (queue){  //count amount of nodes
@@ -167,20 +172,26 @@ int depth(atree* root){
 }
 
 //this will make heap look like a complete pyramid
-void spacing(int depth){
-    for (int i = 0; i < depth * SPACE_AMOUNT; i++){
+void spacing(int factor){
+    for (int i = 0; i < factor * SPACE_AMOUNT; i++){
         cout << " ";
     }
 }
 
 //print the whole heap beautifully with proper spacing
 void display(atree* root){
+    if (!root){     //only display non-empty heap
+        return;
+    }
+
     //initializations
-    int curr = depth(root); //necessary for proper spacing
+    int total = depth(root), curr = 1;
     aqueue *currLevel = nullptr, *nextLevel = nullptr;
 
     enqueue(currLevel, root);
-    while (currLevel){  //process if there are still childrens
+    while (currLevel){  //process if there are still children
+        int factor = ( 1 << (total - curr) ) * SPACE_AMOUNT / 2;
+        spacing(factor);
         while (currLevel){  //process all nodes in currLevel
             if (currLevel->n->left){
                 enqueue(nextLevel, currLevel->n->left);
@@ -189,15 +200,16 @@ void display(atree* root){
                 enqueue(nextLevel, currLevel->n->right);
             }
             //print value with proper spacing
-            spacing(curr);
             cout << dequeue(currLevel)->value;
-            spacing(curr);
+            spacing(factor * 2);
         }
+        cout << endl;           //move onto the next level
         currLevel = nextLevel;  //move onto nextLevel
         nextLevel = nullptr;    //empty it for the next level
-        cout << endl;
-        curr = curr / 2;        //half spacing of prev level
+        curr++;        //half spacing of prev level
     }
+    cout << "----------------------------------------------------"
+         << endl;
 }
 
 int main(){
@@ -205,18 +217,22 @@ int main(){
     ifstream in("input.txt");   //file
     int key;                    //insert
     atree* tree = nullptr;      //heap
+    cout << "----------------------------------------------------"
+         << endl;
 
     //populate from file and insert into & display heap
     while (in >> key){
         insertIntoHeap(tree, key);
+        cout << "Insert " << key << endl << endl;
         display(tree);
     }
 
     //delete from & display heap
-    for (int i = 0; i < DELETE_AMOUNT; i++){
+    for (int i = 1; i <= DELETE_AMOUNT; i++){
         deleteFromHeap(tree);
+        cout << "Delete count: " << i << endl << endl;
         display(tree);
     }
-    
+
     return 0;
 }
