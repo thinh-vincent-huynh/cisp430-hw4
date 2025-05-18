@@ -151,7 +151,7 @@ int depth(atree* root){
     //initializations
     int nodes = 0;              //amount of nodes in heap
     aqueue* queue = nullptr;
-    int depth = 1, two = 2;     //ceil( log2(nodes) )
+    int depth = 0, two = 2;     //ceil( log2(nodes) )
 
     enqueue(queue, root);
     while (queue){  //count amount of nodes
@@ -185,7 +185,7 @@ void display(atree* root){
     }
 
     //initializations
-    int total = depth(root), curr = 1;
+    int total = depth(root), curr = 0;
     aqueue *currLevel = nullptr, *nextLevel = nullptr;
 
     enqueue(currLevel, root);
